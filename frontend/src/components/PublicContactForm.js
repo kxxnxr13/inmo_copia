@@ -19,12 +19,22 @@ const PublicContactForm = ({ propertyId }) => {
     e.preventDefault();
     setError('');
     setSuccess('');
+
+    console.log('📤 Sending contact form:', { ...form, propertyId });
+
     try {
-      await api.post('/contacts', { ...form, propertyId });
-      setSuccess('¡Solicitud enviada correctamente!');
+      const response = await api.post('/contacts', { ...form, propertyId });
+      console.log('✅ Contact form response:', response.data);
+
+      setSuccess('¡Solicitud enviada correctamente! Nos pondremos en contacto contigo pronto.');
       setForm({ name: '', email: '', phone: '', message: '' });
     } catch (err) {
-      setError('Error al enviar la solicitud');
+      console.error('❌ Contact form error:', err);
+
+      const errorMessage = err.response?.data?.message ||
+                          err.response?.data?.error ||
+                          'Error al enviar la solicitud. Por favor, intenta de nuevo.';
+      setError(errorMessage);
     }
   };
 
