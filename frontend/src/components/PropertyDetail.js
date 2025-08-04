@@ -59,7 +59,7 @@ const PropertyDetail = () => {
           {/* Imagen principal */}
           <div style={{ marginBottom: 16 }}>
             <img
-              src={`http://localhost:5000/uploads/${images[selectedImage]}`}
+              src={`http://localhost:8000/uploads/${images[selectedImage]}`}
               alt={`${property.title} - Imagen ${selectedImage + 1}`}
               style={{
                 width: '100%',
