@@ -44,9 +44,9 @@ exports.create = async (req, res) => {
 
     // Validación básica
     if (!name || !email || !phone) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Nombre, email y teléfono son requeridos' 
+      return res.status(400).json({
+        success: false,
+        message: 'Nombre, email y teléfono son requeridos'
       });
     }
 
@@ -62,39 +62,44 @@ exports.create = async (req, res) => {
     };
 
     if (ContactRequest) {
-      // Usar base de datos real
-      console.log('💾 Using database storage');
-      const contact = await ContactRequest.create(contactData);
-      
-      console.log('✅ Contact request created in database:', contact.name);
-      res.status(201).json({ 
-        success: true, 
-        message: 'Solicitud de contacto enviada exitosamente a la base de datos',
-        contact: contact.toJSON() 
-      });
-    } else {
-      // Usar memoria (fallback)
-      console.log('🧠 Using memory storage');
-      const newContact = {
-        id: nextId++,
-        ...contactData,
-        createdAt: new Date().toISOString()
-      };
+      try {
+        // Usar base de datos real
+        console.log('💾 Using database storage');
+        const contact = await ContactRequest.create(contactData);
 
-      contactRequestsMemory.push(newContact);
-      console.log('✅ Contact request created in memory:', newContact.name);
-      res.status(201).json({ 
-        success: true, 
-        message: 'Solicitud de contacto enviada exitosamente en memoria',
-        contact: newContact 
-      });
+        console.log('✅ Contact request created in database:', contact.name);
+        return res.status(201).json({
+          success: true,
+          message: 'Solicitud de contacto enviada exitosamente a la base de datos',
+          contact: contact.toJSON()
+        });
+      } catch (dbError) {
+        console.error('❌ Database error, falling back to memory:', dbError.message);
+        // Fallar silenciosamente a memoria
+      }
     }
+
+    // Usar memoria (fallback) - tanto si ContactRequest es null como si falla la consulta
+    console.log('🧠 Using memory storage');
+    const newContact = {
+      id: nextId++,
+      ...contactData,
+      createdAt: new Date().toISOString()
+    };
+
+    contactRequestsMemory.push(newContact);
+    console.log('✅ Contact request created in memory:', newContact.name);
+    res.status(201).json({
+      success: true,
+      message: 'Solicitud de contacto enviada exitosamente en memoria',
+      contact: newContact
+    });
   } catch (error) {
     console.error('❌ Error creating contact request:', error);
-    res.status(400).json({ 
-      success: false, 
+    res.status(400).json({
+      success: false,
       message: 'Error al crear la solicitud de contacto',
-      error: error.message 
+      error: error.message
     });
   }
 };
@@ -102,51 +107,56 @@ exports.create = async (req, res) => {
 exports.getAll = async (req, res) => {
   try {
     console.log('📋 Getting all contact requests');
-    
+
     const { ContactRequest, Property } = getContactModels();
-    
+
     if (ContactRequest) {
-      // Usar base de datos real
-      console.log('💾 Fetching from database');
-      const contacts = await ContactRequest.findAll({
-        include: Property ? [{ 
-          model: Property, 
-          as: 'property',
-          attributes: ['id', 'title'] 
-        }] : [],
-        order: [['createdAt', 'DESC']]
-      });
-      
-      console.log('Total contact requests from database:', contacts.length);
-      
-      res.json({
-        success: true,
-        contacts: contacts.map(c => c.toJSON()),
-        total: contacts.length,
-        source: 'database'
-      });
-    } else {
-      // Usar memoria (fallback)
-      console.log('🧠 Fetching from memory');
-      const sortedContacts = contactRequestsMemory.sort((a, b) => 
-        new Date(b.createdAt) - new Date(a.createdAt)
-      );
-      
-      console.log('Total contact requests from memory:', sortedContacts.length);
-      
-      res.json({
-        success: true,
-        contacts: sortedContacts,
-        total: sortedContacts.length,
-        source: 'memory'
-      });
+      try {
+        // Usar base de datos real
+        console.log('💾 Fetching from database');
+        const contacts = await ContactRequest.findAll({
+          include: Property ? [{
+            model: Property,
+            as: 'property',
+            attributes: ['id', 'title']
+          }] : [],
+          order: [['createdAt', 'DESC']]
+        });
+
+        console.log('Total contact requests from database:', contacts.length);
+
+        return res.json({
+          success: true,
+          contacts: contacts.map(c => c.toJSON()),
+          total: contacts.length,
+          source: 'database'
+        });
+      } catch (dbError) {
+        console.error('❌ Database error, falling back to memory:', dbError.message);
+        // Fallar silenciosamente a memoria
+      }
     }
+
+    // Usar memoria (fallback) - tanto si ContactRequest es null como si falla la consulta
+    console.log('🧠 Fetching from memory');
+    const sortedContacts = contactRequestsMemory.sort((a, b) =>
+      new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    console.log('Total contact requests from memory:', sortedContacts.length);
+
+    res.json({
+      success: true,
+      contacts: sortedContacts,
+      total: sortedContacts.length,
+      source: 'memory'
+    });
   } catch (error) {
-    console.error('❌ Error getting contact requests:', error);
-    res.status(500).json({ 
-      success: false, 
+    console.error('❌ Critical error getting contact requests:', error);
+    res.status(500).json({
+      success: false,
       message: 'Error al obtener las solicitudes de contacto',
-      error: error.message 
+      error: error.message
     });
   }
 };
@@ -155,60 +165,62 @@ exports.getById = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     console.log('🔍 Looking for contact request with ID:', id);
-    
+
     const { ContactRequest, Property } = getContactModels();
-    
+
     if (ContactRequest) {
-      // Usar base de datos real
-      console.log('💾 Searching in database');
-      const contact = await ContactRequest.findByPk(id, {
-        include: Property ? [{ 
-          model: Property, 
-          as: 'property',
-          attributes: ['id', 'title'] 
-        }] : []
-      });
-      
-      if (!contact) {
-        console.log('❌ Contact request not found in database with ID:', id);
-        return res.status(404).json({ 
-          success: false, 
-          message: `Solicitud de contacto con ID ${id} no encontrada en la base de datos` 
+      try {
+        // Usar base de datos real
+        console.log('💾 Searching in database');
+        const contact = await ContactRequest.findByPk(id, {
+          include: Property ? [{
+            model: Property,
+            as: 'property',
+            attributes: ['id', 'title']
+          }] : []
         });
+
+        if (!contact) {
+          console.log('❌ Contact request not found in database with ID:', id);
+          // Fallar a memoria en lugar de devolver 404 inmediatamente
+        } else {
+          console.log('✅ Contact request found in database:', contact.name);
+          return res.json({
+            success: true,
+            contact: contact.toJSON(),
+            source: 'database'
+          });
+        }
+      } catch (dbError) {
+        console.error('❌ Database error, falling back to memory:', dbError.message);
+        // Fallar silenciosamente a memoria
       }
-      
-      console.log('✅ Contact request found in database:', contact.name);
-      res.json({
-        success: true,
-        contact: contact.toJSON(),
-        source: 'database'
-      });
-    } else {
-      // Usar memoria (fallback)
-      console.log('🧠 Searching in memory');
-      const contact = contactRequestsMemory.find(c => c.id === id);
-      
-      if (!contact) {
-        console.log('❌ Contact request not found in memory with ID:', id);
-        return res.status(404).json({ 
-          success: false, 
-          message: `Solicitud de contacto con ID ${id} no encontrada` 
-        });
-      }
-      
-      console.log('✅ Contact request found in memory:', contact.name);
-      res.json({
-        success: true,
-        contact: contact,
-        source: 'memory'
+    }
+
+    // Usar memoria (fallback) - tanto si ContactRequest es null como si falla la consulta
+    console.log('🧠 Searching in memory');
+    const contact = contactRequestsMemory.find(c => c.id === id);
+
+    if (!contact) {
+      console.log('❌ Contact request not found in memory with ID:', id);
+      return res.status(404).json({
+        success: false,
+        message: `Solicitud de contacto con ID ${id} no encontrada`
       });
     }
+
+    console.log('✅ Contact request found in memory:', contact.name);
+    res.json({
+      success: true,
+      contact: contact,
+      source: 'memory'
+    });
   } catch (error) {
-    console.error('❌ Error getting contact request:', error);
-    res.status(500).json({ 
-      success: false, 
+    console.error('❌ Critical error getting contact request:', error);
+    res.status(500).json({
+      success: false,
       message: 'Error al obtener la solicitud de contacto',
-      error: error.message 
+      error: error.message
     });
   }
 };
