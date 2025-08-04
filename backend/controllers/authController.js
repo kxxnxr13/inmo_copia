@@ -2,12 +2,39 @@ const { User } = require('../models');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+// Usuarios de prueba para cuando la base de datos no esté disponible
+const testUsers = [
+  {
+    id: 1,
+    name: 'Admin Usuario',
+    email: 'admin@inmobiliaria.com',
+    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
+    role: 'admin'
+  },
+  {
+    id: 2,
+    name: 'Super Admin',
+    email: 'superadmin@inmobiliaria.com',
+    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
+    role: 'super_admin'
+  }
+];
+
 exports.loginController = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // Busca el usuario por email
-    const user = await User.findOne({ where: { email } });
+    let user = null;
+
+    try {
+      // Intenta buscar el usuario en la base de datos
+      user = await User.findOne({ where: { email } });
+    } catch (dbError) {
+      console.log('Base de datos no disponible, usando usuarios de prueba');
+      // Si la BD no está disponible, usa los usuarios de prueba
+      user = testUsers.find(u => u.email === email);
+    }
+
     if (!user) {
       return res.status(401).json({ message: 'Credenciales incorrectas' });
     }
@@ -21,12 +48,18 @@ exports.loginController = async (req, res) => {
     // Genera el token
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || 'secreto', // Usa tu secreto real en producción
+      process.env.JWT_SECRET || 'secreto',
       { expiresIn: '8h' }
     );
 
     // Devuelve el usuario (sin la contraseña) y el token
-    const { password: _, ...userData } = user.toJSON();
+    const userData = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    };
+
     res.json({ user: userData, token });
   } catch (error) {
     console.error('Error en login:', error);
