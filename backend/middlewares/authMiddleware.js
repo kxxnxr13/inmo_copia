@@ -12,9 +12,6 @@ const authMiddleware = (req, res, next) => {
     req.user = decoded; // { id, role }
     next();
   } catch (error) {
-    console.log('❌ Token verification failed:', error.message);
-    console.log('JWT_SECRET being used:', process.env.JWT_SECRET || 'secreto_inmobiliaria');
-    console.log('Error type:', error.name);
     return res.status(401).json({
       error: 'Token inválido - Por favor cierra sesión e inicia sesión nuevamente'
     });
