@@ -229,60 +229,63 @@ exports.update = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     console.log('📝 Updating contact request with ID:', id);
-    
+
     const { ContactRequest } = getContactModels();
-    
+
     if (ContactRequest) {
-      // Usar base de datos real
-      console.log('💾 Updating in database');
-      const contact = await ContactRequest.findByPk(id);
-      
-      if (!contact) {
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Solicitud de contacto no encontrada en la base de datos' 
-        });
+      try {
+        // Usar base de datos real
+        console.log('💾 Updating in database');
+        const contact = await ContactRequest.findByPk(id);
+
+        if (!contact) {
+          console.log('❌ Contact request not found in database with ID:', id);
+          // Fallar a memoria en lugar de devolver 404 inmediatamente
+        } else {
+          await contact.update(req.body);
+          console.log('✅ Contact request updated in database:', contact.id);
+          return res.json({
+            success: true,
+            message: 'Solicitud de contacto actualizada exitosamente en base de datos',
+            contact: contact.toJSON()
+          });
+        }
+      } catch (dbError) {
+        console.error('❌ Database error, falling back to memory:', dbError.message);
+        // Fallar silenciosamente a memoria
       }
+    }
 
-      await contact.update(req.body);
-      console.log('✅ Contact request updated in database:', contact.id);
-      res.json({ 
-        success: true, 
-        message: 'Solicitud de contacto actualizada exitosamente en base de datos',
-        contact: contact.toJSON() 
-      });
-    } else {
-      // Usar memoria (fallback)
-      console.log('🧠 Updating in memory');
-      const contactIndex = contactRequestsMemory.findIndex(c => c.id === id);
-      
-      if (contactIndex === -1) {
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Solicitud de contacto no encontrada en memoria' 
-        });
-      }
+    // Usar memoria (fallback) - tanto si ContactRequest es null como si falla la consulta
+    console.log('🧠 Updating in memory');
+    const contactIndex = contactRequestsMemory.findIndex(c => c.id === id);
 
-      const updatedContact = {
-        ...contactRequestsMemory[contactIndex],
-        ...req.body,
-        updatedAt: new Date().toISOString()
-      };
-
-      contactRequestsMemory[contactIndex] = updatedContact;
-      console.log('✅ Contact request updated in memory:', updatedContact.id);
-      res.json({ 
-        success: true, 
-        message: 'Solicitud de contacto actualizada exitosamente en memoria',
-        contact: updatedContact 
+    if (contactIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Solicitud de contacto no encontrada en memoria'
       });
     }
+
+    const updatedContact = {
+      ...contactRequestsMemory[contactIndex],
+      ...req.body,
+      updatedAt: new Date().toISOString()
+    };
+
+    contactRequestsMemory[contactIndex] = updatedContact;
+    console.log('✅ Contact request updated in memory:', updatedContact.id);
+    res.json({
+      success: true,
+      message: 'Solicitud de contacto actualizada exitosamente en memoria',
+      contact: updatedContact
+    });
   } catch (error) {
-    console.error('❌ Error updating contact request:', error);
-    res.status(400).json({ 
-      success: false, 
+    console.error('❌ Critical error updating contact request:', error);
+    res.status(400).json({
+      success: false,
       message: 'Error al actualizar la solicitud de contacto',
-      error: error.message 
+      error: error.message
     });
   }
 };
