@@ -156,25 +156,30 @@ exports.getAll = async (req, res) => {
 exports.getById = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
+    console.log('🔍 Looking for property with ID:', id);
+    console.log('Available property IDs:', properties.map(p => p.id));
+
     const property = properties.find(p => p.id === id);
-    
+
     if (!property) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Propiedad no encontrada' 
+      console.log('❌ Property not found with ID:', id);
+      return res.status(404).json({
+        success: false,
+        message: `Propiedad con ID ${id} no encontrada. IDs disponibles: ${properties.map(p => p.id).join(', ')}`
       });
     }
 
+    console.log('✅ Property found:', property.title);
     res.json({
       success: true,
       property: property
     });
   } catch (error) {
     console.error('❌ Error getting property:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: 'Error al obtener la propiedad',
-      error: error.message 
+      error: error.message
     });
   }
 };
