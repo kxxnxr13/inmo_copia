@@ -12,8 +12,12 @@ const PropertyList = () => {
     setLoading(true);
     try {
       const res = await api.get('/properties');
-      setProperties(res.data);
+      console.log('Properties response:', res.data);
+      // Manejar tanto la nueva estructura como la antigua
+      const propertiesData = res.data.properties || res.data || [];
+      setProperties(propertiesData);
     } catch (err) {
+      console.error('Error fetching properties:', err);
       setProperties([]);
     }
     setLoading(false);
