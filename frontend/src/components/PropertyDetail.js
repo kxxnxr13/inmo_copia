@@ -13,17 +13,125 @@ const PropertyDetail = () => {
     const fetchProperty = async () => {
       try {
         const res = await api.get(`/properties/${id}`);
-        setProperty(res.data);
+        console.log('PropertyDetail response:', res.data);
+        // Handle both new structure { property: {...} } and old structure {...}
+        const propertyData = res.data.property || res.data;
+        setProperty(propertyData);
       } catch (err) {
-        setProperty(null);
+        console.error('Error fetching property:', err);
+
+        if (err.response?.status === 404) {
+          console.log('Property not found (404)');
+          const errorMessage = err.response?.data?.message || `Propiedad con ID ${id} no encontrada`;
+          setProperty({ error: 'not_found', message: errorMessage });
+        } else {
+          console.log('Other error:', err.response?.status);
+          setProperty({ error: 'general', message: 'Error al cargar la propiedad' });
+        }
       }
       setLoading(false);
     };
     fetchProperty();
   }, [id]);
 
-  if (loading) return <div style={{ padding: 32 }}>Cargando propiedad...</div>;
-  if (!property) return <div style={{ padding: 32 }}>Propiedad no encontrada.</div>;
+  if (loading) return (
+    <div style={{
+      padding: 40,
+      textAlign: 'center',
+      fontSize: 18,
+      color: '#666'
+    }}>
+      🔄 Cargando propiedad...
+    </div>
+  );
+
+  if (!property) return (
+    <div style={{
+      padding: 40,
+      textAlign: 'center',
+      fontSize: 18,
+      color: '#d9534f'
+    }}>
+      ❌ Propiedad no encontrada
+    </div>
+  );
+
+  if (property.error === 'not_found') return (
+    <div style={{
+      maxWidth: 600,
+      margin: '40px auto',
+      padding: 40,
+      textAlign: 'center',
+      background: '#f8f9fa',
+      borderRadius: 12,
+      border: '1px solid #ddd'
+    }}>
+      <h2 style={{ color: '#d9534f', marginBottom: 20 }}>
+        🔍 Propiedad No Encontrada
+      </h2>
+      <p style={{ fontSize: 16, color: '#666', marginBottom: 20 }}>
+        {property.message}
+      </p>
+      <div style={{
+        background: '#fff3cd',
+        padding: 15,
+        borderRadius: 8,
+        marginBottom: 20,
+        border: '1px solid #ffeaa7'
+      }}>
+        <p style={{ margin: 0, color: '#856404' }}>
+          💡 <strong>Sugerencia:</strong> Verifica el enlace o navega a nuestro catálogo para ver las propiedades disponibles.
+        </p>
+      </div>
+      <a
+        href="/propiedades"
+        style={{
+          background: '#f5a623',
+          color: 'white',
+          padding: '12px 24px',
+          borderRadius: 6,
+          textDecoration: 'none',
+          fontWeight: 'bold',
+          display: 'inline-block'
+        }}
+      >
+        🏠 Ver Todas las Propiedades
+      </a>
+    </div>
+  );
+
+  if (property.error === 'general') return (
+    <div style={{
+      maxWidth: 600,
+      margin: '40px auto',
+      padding: 40,
+      textAlign: 'center',
+      background: '#f8f9fa',
+      borderRadius: 12,
+      border: '1px solid #ddd'
+    }}>
+      <h2 style={{ color: '#d9534f', marginBottom: 20 }}>
+        ⚠️ Error al Cargar
+      </h2>
+      <p style={{ fontSize: 16, color: '#666', marginBottom: 20 }}>
+        {property.message}
+      </p>
+      <button
+        onClick={() => window.location.reload()}
+        style={{
+          background: '#6c757d',
+          color: 'white',
+          border: 'none',
+          padding: '12px 24px',
+          borderRadius: 6,
+          fontWeight: 'bold',
+          cursor: 'pointer'
+        }}
+      >
+        🔄 Intentar de Nuevo
+      </button>
+    </div>
+  );
 
   // Asegurarse de que images siempre sea un array
   const images = Array.isArray(property.images)
@@ -55,7 +163,7 @@ const PropertyDetail = () => {
           {/* Imagen principal */}
           <div style={{ marginBottom: 16 }}>
             <img
-              src={`http://localhost:5000/uploads/${images[selectedImage]}`}
+              src={`http://localhost:8000/uploads/${images[selectedImage]}`}
               alt={`${property.title} - Imagen ${selectedImage + 1}`}
               style={{
                 width: '100%',
@@ -78,7 +186,7 @@ const PropertyDetail = () => {
               {images.map((img, idx) => (
                 <img
                   key={idx}
-                  src={`http://localhost:5000/uploads/${img}`}
+                  src={`http://localhost:8000/uploads/${img}`}
                   alt={`Miniatura ${idx + 1}`}
                   onClick={() => setSelectedImage(idx)}
                   style={{

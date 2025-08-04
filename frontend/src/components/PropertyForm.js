@@ -22,11 +22,7 @@ const PropertyForm = ({ onSuccess, propertyToEdit, onCancel }) => {
   const [form, setForm] = useState(propertyToEdit ? propertyToEdit : initialState);
   const [selectedImages, setSelectedImages] = useState([]);
   const [error, setError] = useState('');
-  // NUEVO: Estado para imágenes actuales y las que se eliminarán
-  const [currentImages, setCurrentImages] = useState(
-    propertyToEdit && propertyToEdit.images ? [...propertyToEdit.images] : []
-  );
-  const [imagesToDelete, setImagesToDelete] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const isEdit = !!propertyToEdit;
 
@@ -40,20 +36,15 @@ const PropertyForm = ({ onSuccess, propertyToEdit, onCancel }) => {
     setSelectedImages(files);
   };
 
-  // Eliminar imagen NUEVA (aún no subida)
   const handleRemoveImage = (index) => {
     setSelectedImages(prev => prev.filter((_, i) => i !== index));
-  };
-
-  // Eliminar imagen ACTUAL (ya guardada en la propiedad)
-  const handleRemoveCurrentImage = (img) => {
-    setCurrentImages(prev => prev.filter(image => image !== img));
-    setImagesToDelete(prev => [...prev, img]);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
+    
     try {
       const formData = new FormData();
 
@@ -64,22 +55,12 @@ const PropertyForm = ({ onSuccess, propertyToEdit, onCancel }) => {
         }
       });
 
-      // Agregar las imágenes nuevas seleccionadas
+      // Agregar las imágenes seleccionadas
       selectedImages.forEach((image) => {
         formData.append('images', image);
       });
 
-      // Agregar las imágenes a eliminar (solo en edición)
-      if (isEdit && imagesToDelete.length > 0) {
-        imagesToDelete.forEach(img => {
-          formData.append('imagesToDelete[]', img);
-        });
-      }
-
-      // Enviar también la lista de imágenes actuales (para mantener las que no se eliminaron)
-      if (isEdit) {
-        formData.append('currentImages', JSON.stringify(currentImages));
-      }
+      console.log('Enviando datos:', Object.fromEntries(formData.entries()));
 
       if (isEdit) {
         await api.put(`/properties/${propertyToEdit.id}`, formData, {
@@ -90,108 +71,309 @@ const PropertyForm = ({ onSuccess, propertyToEdit, onCancel }) => {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
       }
+      
+      alert(isEdit ? 'Propiedad actualizada exitosamente' : 'Propiedad creada exitosamente');
+      setForm(initialState);
+      setSelectedImages([]);
       onSuccess();
     } catch (err) {
       console.error('Error al guardar la propiedad:', err);
-      setError('Error al guardar la propiedad');
+      setError(err.response?.data?.message || 'Error al guardar la propiedad');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ marginBottom: 24 }}>
-      <h4>{isEdit ? 'Editar Propiedad' : 'Crear Propiedad'}</h4>
-      {/* ...campos normales... */}
-      {/* ...los campos de texto y select van aquí igual que antes... */}
-      {/* ... */}
+    <div style={{ padding: 20, border: '1px solid #ddd', borderRadius: 8, marginBottom: 20 }}>
+      <h3>{isEdit ? 'Editar Propiedad' : 'Crear Nueva Propiedad'}</h3>
+      <form onSubmit={handleSubmit}>
+        
+        {/* Título */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 4, fontWeight: 'bold' }}>
+            Título *
+          </label>
+          <input
+            type="text"
+            name="title"
+            value={form.title}
+            onChange={handleChange}
+            required
+            placeholder="Ej: Casa moderna en el centro"
+            style={{ width: '100%', padding: 8, marginBottom: 4 }}
+          />
+        </div>
 
-      {/* Campo para subir imágenes */}
-      <div>
-        <label>Imágenes (máximo 5):</label>
-        <input 
-          type="file" 
-          name="images" 
-          multiple 
-          accept="image/*" 
-          onChange={handleImagesChange} 
-          style={{ width: '100%', marginBottom: 8 }} 
-        />
-        {selectedImages.length > 0 && (
-          <div style={{ fontSize: '12px', color: '#666', marginBottom: 8 }}>
-            <p>{selectedImages.length} imagen(es) seleccionada(s):</p>
-            <ul style={{ margin: 0, paddingLeft: 20 }}>
-              {selectedImages.map((file, idx) => (
-                <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {file.name}
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveImage(idx)}
-                    style={{
-                      marginLeft: 8,
-                      color: 'white',
-                      background: '#d9534f',
-                      border: 'none',
-                      borderRadius: 3,
-                      padding: '2px 8px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Eliminar
-                  </button>
-                </li>
-              ))}
-            </ul>
+        {/* Descripción */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 4, fontWeight: 'bold' }}>
+            Descripción
+          </label>
+          <textarea
+            name="description"
+            value={form.description}
+            onChange={handleChange}
+            rows={4}
+            placeholder="Describe la propiedad..."
+            style={{ width: '100%', padding: 8, marginBottom: 4 }}
+          />
+        </div>
+
+        {/* Precio */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 4, fontWeight: 'bold' }}>
+            Precio *
+          </label>
+          <input
+            type="number"
+            name="price"
+            value={form.price}
+            onChange={handleChange}
+            required
+            placeholder="Ej: 150000"
+            style={{ width: '100%', padding: 8, marginBottom: 4 }}
+          />
+        </div>
+
+        {/* Tipo de Propiedad */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 4, fontWeight: 'bold' }}>
+            Tipo de Propiedad *
+          </label>
+          <select
+            name="type"
+            value={form.type}
+            onChange={handleChange}
+            required
+            style={{ width: '100%', padding: 8, marginBottom: 4 }}
+          >
+            <option value="casa">Casa</option>
+            <option value="apartamento">Apartamento</option>
+            <option value="local">Local</option>
+            <option value="oficina">Oficina</option>
+            <option value="terreno">Terreno</option>
+            <option value="bodega">Bodega</option>
+          </select>
+        </div>
+
+        {/* Operación */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 4, fontWeight: 'bold' }}>
+            Operación *
+          </label>
+          <select
+            name="operation"
+            value={form.operation}
+            onChange={handleChange}
+            required
+            style={{ width: '100%', padding: 8, marginBottom: 4 }}
+          >
+            <option value="venta">Venta</option>
+            <option value="alquiler">Alquiler</option>
+          </select>
+        </div>
+
+        {/* Estado */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 4, fontWeight: 'bold' }}>
+            Estado
+          </label>
+          <select
+            name="status"
+            value={form.status}
+            onChange={handleChange}
+            style={{ width: '100%', padding: 8, marginBottom: 4 }}
+          >
+            <option value="disponible">Disponible</option>
+            <option value="vendido">Vendido</option>
+            <option value="alquilado">Alquilado</option>
+          </select>
+        </div>
+
+        {/* Ubicación */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 4, fontWeight: 'bold' }}>
+            Ubicación (Ciudad) *
+          </label>
+          <input
+            type="text"
+            name="location"
+            value={form.location}
+            onChange={handleChange}
+            required
+            placeholder="Ej: Medellín"
+            style={{ width: '100%', padding: 8, marginBottom: 4 }}
+          />
+        </div>
+
+        {/* Dirección */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 4, fontWeight: 'bold' }}>
+            Dirección
+          </label>
+          <input
+            type="text"
+            name="address"
+            value={form.address}
+            onChange={handleChange}
+            placeholder="Ej: Carrera 50 # 25-30"
+            style={{ width: '100%', padding: 8, marginBottom: 4 }}
+          />
+        </div>
+
+        {/* Área */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 4, fontWeight: 'bold' }}>
+            Área (m²)
+          </label>
+          <input
+            type="number"
+            name="area"
+            value={form.area}
+            onChange={handleChange}
+            placeholder="Ej: 120"
+            style={{ width: '100%', padding: 8, marginBottom: 4 }}
+          />
+        </div>
+
+        {/* Habitaciones */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 4, fontWeight: 'bold' }}>
+            Habitaciones
+          </label>
+          <input
+            type="number"
+            name="bedrooms"
+            value={form.bedrooms}
+            onChange={handleChange}
+            min="0"
+            style={{ width: '100%', padding: 8, marginBottom: 4 }}
+          />
+        </div>
+
+        {/* Baños */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 4, fontWeight: 'bold' }}>
+            Baños
+          </label>
+          <input
+            type="number"
+            name="bathrooms"
+            value={form.bathrooms}
+            onChange={handleChange}
+            min="0"
+            style={{ width: '100%', padding: 8, marginBottom: 4 }}
+          />
+        </div>
+
+        {/* Parqueaderos */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 4, fontWeight: 'bold' }}>
+            Parqueaderos
+          </label>
+          <input
+            type="number"
+            name="parking"
+            value={form.parking}
+            onChange={handleChange}
+            min="0"
+            style={{ width: '100%', padding: 8, marginBottom: 4 }}
+          />
+        </div>
+
+        {/* Imágenes */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 4, fontWeight: 'bold' }}>
+            Imágenes (máximo 5)
+          </label>
+          <input 
+            type="file" 
+            name="images" 
+            multiple 
+            accept="image/*" 
+            onChange={handleImagesChange} 
+            style={{ width: '100%', padding: 8, marginBottom: 8 }} 
+          />
+          {selectedImages.length > 0 && (
+            <div style={{ fontSize: '12px', color: '#666', marginBottom: 8 }}>
+              <p>{selectedImages.length} imagen(es) seleccionada(s):</p>
+              <ul style={{ margin: 0, paddingLeft: 20 }}>
+                {selectedImages.map((file, idx) => (
+                  <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    {file.name}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(idx)}
+                      style={{
+                        marginLeft: 8,
+                        color: 'white',
+                        background: '#d9534f',
+                        border: 'none',
+                        borderRadius: 3,
+                        padding: '2px 8px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Eliminar
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div style={{ 
+            color: 'white', 
+            background: '#d9534f', 
+            padding: 10, 
+            borderRadius: 4, 
+            marginBottom: 16 
+          }}>
+            {error}
           </div>
         )}
-      </div>
 
-      {/* Mostrar imágenes existentes si es edición */}
-      {isEdit && currentImages && currentImages.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <label>Imágenes actuales:</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {currentImages.map((img, idx) => (
-              <div key={idx} style={{ position: 'relative' }}>
-                <img
-                  src={`http://localhost:5000/uploads/${img}`}
-                  alt={`Imagen ${idx + 1}`}
-                  style={{ width: 100, height: 100, objectFit: 'cover', borderRadius: 4 }}
-                />
-                <button
-                  type="button"
-                  onClick={() => handleRemoveCurrentImage(img)}
-                  style={{
-                    position: 'absolute',
-                    top: 2,
-                    right: 2,
-                    background: '#d9534f',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '50%',
-                    width: 22,
-                    height: 22,
-                    cursor: 'pointer',
-                    fontWeight: 'bold',
-                    fontSize: 14,
-                    lineHeight: '18px',
-                    padding: 0
-                  }}
-                  title="Eliminar imagen"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-          <p style={{ fontSize: '12px', color: '#666' }}>
-            Puedes eliminar imágenes individuales.
-          </p>
+        {/* Botones */}
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button 
+            type="submit" 
+            disabled={loading}
+            style={{ 
+              background: loading ? '#ccc' : '#5cb85c', 
+              color: 'white', 
+              border: 'none', 
+              padding: '10px 20px', 
+              borderRadius: 4, 
+              cursor: loading ? 'not-allowed' : 'pointer',
+              fontWeight: 'bold'
+            }}
+          >
+            {loading ? 'Guardando...' : (isEdit ? 'Actualizar Propiedad' : 'Crear Propiedad')}
+          </button>
+          
+          {onCancel && (
+            <button 
+              type="button" 
+              onClick={onCancel}
+              style={{ 
+                background: '#6c757d', 
+                color: 'white', 
+                border: 'none', 
+                padding: '10px 20px', 
+                borderRadius: 4, 
+                cursor: 'pointer' 
+              }}
+            >
+              Cancelar
+            </button>
+          )}
         </div>
-      )}
-
-      {error && <div style={{ color: 'red', marginBottom: 8 }}>{error}</div>}
-      <button type="submit" style={{ marginRight: 8 }}>{isEdit ? 'Actualizar' : 'Crear'}</button>
-      {onCancel && <button type="button" onClick={onCancel}>Cancelar</button>}
-    </form>
+      </form>
+    </div>
   );
 };
 

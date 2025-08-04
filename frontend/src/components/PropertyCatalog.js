@@ -17,8 +17,13 @@ const PropertyCatalog = () => {
     const fetchProperties = async () => {
       try {
         const res = await api.get('/properties');
-        setProperties(res.data);
+        console.log('PropertyCatalog response:', res.data);
+        // Handle both new structure { properties: [...] } and old structure [...]
+        const propertiesData = res.data.properties || res.data || [];
+        console.log('Properties data:', propertiesData);
+        setProperties(Array.isArray(propertiesData) ? propertiesData : []);
       } catch (err) {
+        console.error('Error fetching properties:', err);
         setProperties([]);
       }
       setLoading(false);
@@ -26,8 +31,8 @@ const PropertyCatalog = () => {
     fetchProperties();
   }, []);
 
-  // Filtrado básico en frontend
-  const filtered = properties.filter(p => {
+  // Filtrado básico en frontend - with safety check
+  const filtered = Array.isArray(properties) ? properties.filter(p => {
     return (
       (!filters.operation || p.operation === filters.operation) &&
       (!filters.type || p.type === filters.type) &&
@@ -35,7 +40,7 @@ const PropertyCatalog = () => {
       (!filters.minPrice || Number(p.price) >= Number(filters.minPrice)) &&
       (!filters.maxPrice || Number(p.price) <= Number(filters.maxPrice))
     );
-  });
+  }) : [];
 
   const handleChange = e => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
@@ -107,11 +112,11 @@ const PropertyCatalog = () => {
               {/* Mostrar la primera imagen de la propiedad */}
               {property.images && property.images.length > 0 ? (
                 <img
-                  src={`http://localhost:5000/uploads/${property.images[0]}`}
+                  src={`http://localhost:8000/uploads/${property.images[0]}`}
                   alt={property.title}
-                  style={{ 
-                    width: '100%', 
-                    height: 200, 
+                  style={{
+                    width: '100%',
+                    height: 200,
                     objectFit: 'cover',
                     borderRadius: '10px 10px 0 0'
                   }}
