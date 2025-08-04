@@ -235,7 +235,7 @@ exports.update = async (req, res) => {
     if (ContactRequest) {
       try {
         // Usar base de datos real
-        console.log('💾 Updating in database');
+        console.log('���� Updating in database');
         const contact = await ContactRequest.findByPk(id);
 
         if (!contact) {
@@ -294,52 +294,55 @@ exports.delete = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     console.log('🗑️ Deleting contact request with ID:', id);
-    
+
     const { ContactRequest } = getContactModels();
-    
+
     if (ContactRequest) {
-      // Usar base de datos real
-      console.log('💾 Deleting from database');
-      const contact = await ContactRequest.findByPk(id);
-      
-      if (!contact) {
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Solicitud de contacto no encontrada en la base de datos' 
-        });
-      }
+      try {
+        // Usar base de datos real
+        console.log('💾 Deleting from database');
+        const contact = await ContactRequest.findByPk(id);
 
-      await contact.destroy();
-      console.log('✅ Contact request deleted from database:', id);
-      res.json({ 
-        success: true, 
-        message: 'Solicitud de contacto eliminada exitosamente de la base de datos' 
-      });
-    } else {
-      // Usar memoria (fallback)
-      console.log('🧠 Deleting from memory');
-      const contactIndex = contactRequestsMemory.findIndex(c => c.id === id);
-      
-      if (contactIndex === -1) {
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Solicitud de contacto no encontrada en memoria' 
-        });
+        if (!contact) {
+          console.log('❌ Contact request not found in database with ID:', id);
+          // Fallar a memoria en lugar de devolver 404 inmediatamente
+        } else {
+          await contact.destroy();
+          console.log('✅ Contact request deleted from database:', id);
+          return res.json({
+            success: true,
+            message: 'Solicitud de contacto eliminada exitosamente de la base de datos'
+          });
+        }
+      } catch (dbError) {
+        console.error('❌ Database error, falling back to memory:', dbError.message);
+        // Fallar silenciosamente a memoria
       }
+    }
 
-      contactRequestsMemory.splice(contactIndex, 1);
-      console.log('✅ Contact request deleted from memory:', id);
-      res.json({ 
-        success: true, 
-        message: 'Solicitud de contacto eliminada exitosamente de la memoria' 
+    // Usar memoria (fallback) - tanto si ContactRequest es null como si falla la consulta
+    console.log('🧠 Deleting from memory');
+    const contactIndex = contactRequestsMemory.findIndex(c => c.id === id);
+
+    if (contactIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Solicitud de contacto no encontrada en memoria'
       });
     }
+
+    contactRequestsMemory.splice(contactIndex, 1);
+    console.log('✅ Contact request deleted from memory:', id);
+    res.json({
+      success: true,
+      message: 'Solicitud de contacto eliminada exitosamente de la memoria'
+    });
   } catch (error) {
-    console.error('❌ Error deleting contact request:', error);
-    res.status(500).json({ 
-      success: false, 
+    console.error('❌ Critical error deleting contact request:', error);
+    res.status(500).json({
+      success: false,
       message: 'Error al eliminar la solicitud de contacto',
-      error: error.message 
+      error: error.message
     });
   }
 };
