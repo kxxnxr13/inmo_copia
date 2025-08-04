@@ -3,10 +3,15 @@ const { Sequelize } = require('sequelize');
 // Configuración para Supabase PostgreSQL
 let sequelize;
 
-if (process.env.DATABASE_URL) {
-  // Usar URL completa de conexión (Supabase)
-  console.log('📡 Using DATABASE_URL for connection');
-  sequelize = new Sequelize(process.env.DATABASE_URL, {
+// Configuración específica para Supabase
+console.log('📡 Configuring Supabase PostgreSQL connection');
+sequelize = new Sequelize(
+  process.env.DB_NAME || 'postgres',
+  process.env.DB_USER || 'postgres',
+  process.env.DB_PASSWORD || '',
+  {
+    host: process.env.DB_HOST || 'db.hsgvipzswbanogfnxlyo.supabase.co',
+    port: process.env.DB_PORT || 5432,
     dialect: 'postgres',
     logging: false,
     dialectOptions: {
@@ -14,16 +19,19 @@ if (process.env.DATABASE_URL) {
         require: true,
         rejectUnauthorized: false
       },
-      connectTimeout: 60000,
-      socketTimeout: 60000,
-      // Forzar IPv4
-      family: 4
+      connectTimeout: 30000,
+      socketTimeout: 30000,
+      keepAlive: true,
+      // Configuraciones específicas para Supabase
+      statement_timeout: 30000,
+      idle_in_transaction_session_timeout: 30000
     },
     pool: {
-      max: 5,
+      max: 3,
       min: 0,
-      acquire: 60000,
-      idle: 10000
+      acquire: 30000,
+      idle: 10000,
+      evict: 1000
     },
     retry: {
       match: [
@@ -32,52 +40,17 @@ if (process.env.DATABASE_URL) {
         /ConnectionTimedOut/,
         /TimeoutError/,
         /ECONNREFUSED/,
-        /ETIMEDOUT/
+        /ETIMEDOUT/,
+        /EHOSTUNREACH/
       ],
-      max: 3
+      max: 2
+    },
+    // Configuraciones adicionales para Supabase
+    define: {
+      freezeTableName: true,
+      timestamps: true
     }
-  });
-} else {
-  // Usar variables individuales como fallback (local)
-  console.log('📡 Using individual env variables for connection');
-  sequelize = new Sequelize(
-    process.env.DB_NAME || 'postgres',
-    process.env.DB_USER || 'postgres',
-    process.env.DB_PASSWORD || '',
-    {
-      host: process.env.DB_HOST || 'localhost',
-      port: process.env.DB_PORT || 5432,
-      dialect: 'postgres',
-      logging: false,
-      dialectOptions: {
-        ssl: process.env.DB_HOST && process.env.DB_HOST !== 'localhost' ? {
-          require: true,
-          rejectUnauthorized: false
-        } : false,
-        connectTimeout: 60000,
-        socketTimeout: 60000,
-        // Forzar IPv4
-        family: 4
-      },
-      pool: {
-        max: 5,
-        min: 0,
-        acquire: 60000,
-        idle: 10000
-      },
-      retry: {
-        match: [
-          /ConnectionError/,
-          /ConnectionRefused/,
-          /ConnectionTimedOut/,
-          /TimeoutError/,
-          /ECONNREFUSED/,
-          /ETIMEDOUT/
-        ],
-        max: 3
-      }
-    }
-  );
-}
+  }
+);
 
 module.exports = sequelize;
