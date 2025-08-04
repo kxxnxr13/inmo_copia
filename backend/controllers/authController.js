@@ -1,6 +1,18 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+// Importar los usuarios del userController para mantener sincronía
+const getUsersFromUserController = () => {
+  try {
+    const userController = require('./userController');
+    // Acceder a la memoria de usuarios del userController
+    return require('./userController').getUsersMemory?.() || [];
+  } catch (error) {
+    console.log('⚠️ Could not access userController memory, using fallback');
+    return [];
+  }
+};
+
 // Usuarios de prueba para cuando la base de datos no esté disponible (fallback)
 let testUsers = null;
 
