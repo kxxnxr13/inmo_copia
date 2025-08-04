@@ -13,8 +13,12 @@ const ContactRequestList = () => {
     setLoading(true);
     try {
       const res = await api.get('/contacts');
-      setRequests(res.data);
+      console.log('ContactRequestList response:', res.data);
+      // Handle both new structure { contacts: [...] } and old structure [...]
+      const contactsData = res.data.contacts || res.data || [];
+      setRequests(Array.isArray(contactsData) ? contactsData : []);
     } catch (err) {
+      console.error('Error fetching contact requests:', err);
       setRequests([]);
     }
     setLoading(false);
