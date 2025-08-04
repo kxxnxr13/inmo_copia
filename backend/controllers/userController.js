@@ -170,7 +170,7 @@ exports.login = async (req, res) => {
     }
 
     if (!user) {
-      return res.status(401).json({ error: 'Credenciales inválidas' });
+      return res.status(401).json({ error: 'Credenciales inv��lidas' });
     }
 
     const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET || 'secreto_inmobiliaria', { expiresIn: '1d' });
@@ -400,3 +400,6 @@ exports.delete = async (req, res) => {
     });
   }
 };
+
+// Export function to access memory users for authController synchronization
+exports.getUsersMemory = getUsersMemory;
