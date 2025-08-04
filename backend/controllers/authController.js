@@ -1,4 +1,3 @@
-const { User } = require('../models');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -28,7 +27,8 @@ exports.loginController = async (req, res) => {
     let user = null;
 
     try {
-      // Intenta buscar el usuario en la base de datos
+      // Intenta importar y usar el modelo User
+      const { User } = require('../models');
       user = await User.findOne({ where: { email } });
     } catch (dbError) {
       console.log('Base de datos no disponible, usando usuarios de prueba');
