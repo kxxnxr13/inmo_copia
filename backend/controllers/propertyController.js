@@ -40,10 +40,48 @@ let properties = [
     features: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
+  },
+  {
+    id: 3,
+    title: 'Local Comercial en Envigado',
+    description: 'Excelente local comercial en zona de alta circulación',
+    price: 320000000,
+    location: 'Envigado',
+    address: 'Carrera 25 # 35-20',
+    type: 'local',
+    status: 'disponible',
+    operation: 'venta',
+    bedrooms: 0,
+    bathrooms: 2,
+    area: 95,
+    parking: 2,
+    images: [],
+    features: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 4,
+    title: 'Casa Campestre en La Ceja',
+    description: 'Hermosa casa campestre con vista panorámica',
+    price: 650000000,
+    location: 'La Ceja',
+    address: 'Vereda San José',
+    type: 'casa',
+    status: 'disponible',
+    operation: 'venta',
+    bedrooms: 4,
+    bathrooms: 3,
+    area: 200,
+    parking: 3,
+    images: [],
+    features: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   }
 ];
 
-let nextId = 3;
+let nextId = 5;
 
 exports.create = async (req, res) => {
   try {
