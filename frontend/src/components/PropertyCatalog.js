@@ -17,8 +17,13 @@ const PropertyCatalog = () => {
     const fetchProperties = async () => {
       try {
         const res = await api.get('/properties');
-        setProperties(res.data);
+        console.log('PropertyCatalog response:', res.data);
+        // Handle both new structure { properties: [...] } and old structure [...]
+        const propertiesData = res.data.properties || res.data || [];
+        console.log('Properties data:', propertiesData);
+        setProperties(Array.isArray(propertiesData) ? propertiesData : []);
       } catch (err) {
+        console.error('Error fetching properties:', err);
         setProperties([]);
       }
       setLoading(false);
