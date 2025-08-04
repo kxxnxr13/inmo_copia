@@ -478,34 +478,64 @@ exports.delete = async (req, res) => {
     const Property = getPropertyModel();
     
     if (Property) {
-      // Usar base de datos real
-      console.log('💾 Deleting from database');
-      const property = await Property.findByPk(id);
-      
-      if (!property) {
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Propiedad no encontrada en la base de datos' 
+      try {
+        // Intentar usar base de datos real
+        console.log('💾 Attempting database deletion');
+        const property = await Property.findByPk(id);
+
+        if (!property) {
+          console.log('❌ Property not found in database, trying memory');
+          throw new Error('Property not found in database');
+        }
+
+        // Eliminar imágenes del disco si existen
+        const images = property.images ?
+          (typeof property.images === 'string' ? JSON.parse(property.images) : property.images) : [];
+
+        images.forEach(img => {
+          const imgPath = path.join(__dirname, '..', 'uploads', img);
+          if (fs.existsSync(imgPath)) {
+            fs.unlinkSync(imgPath);
+          }
+        });
+
+        await property.destroy();
+        console.log('✅ Property deleted from database:', id);
+        res.json({
+          success: true,
+          message: 'Propiedad eliminada exitosamente de la base de datos'
+        });
+      } catch (dbError) {
+        console.error('❌ Database error, falling back to memory:', dbError.message);
+        // Usar memoria como fallback
+        console.log('🧠 Deleting from memory as fallback');
+        const propertyIndex = propertiesMemory.findIndex(p => p.id === id);
+
+        if (propertyIndex === -1) {
+          return res.status(404).json({
+            success: false,
+            message: 'Propiedad no encontrada'
+          });
+        }
+
+        // Eliminar imágenes del disco si existen
+        const property = propertiesMemory[propertyIndex];
+        if (property.images && Array.isArray(property.images)) {
+          property.images.forEach(img => {
+            const imgPath = path.join(__dirname, '..', 'uploads', img);
+            if (fs.existsSync(imgPath)) {
+              fs.unlinkSync(imgPath);
+            }
+          });
+        }
+
+        propertiesMemory.splice(propertyIndex, 1);
+        console.log('✅ Property deleted from memory:', id);
+        res.json({
+          success: true,
+          message: 'Propiedad eliminada exitosamente de la memoria (BD no disponible)'
         });
       }
-
-      // Eliminar imágenes del disco si existen
-      const images = property.images ? 
-        (typeof property.images === 'string' ? JSON.parse(property.images) : property.images) : [];
-      
-      images.forEach(img => {
-        const imgPath = path.join(__dirname, '..', 'uploads', img);
-        if (fs.existsSync(imgPath)) {
-          fs.unlinkSync(imgPath);
-        }
-      });
-
-      await property.destroy();
-      console.log('✅ Property deleted from database:', id);
-      res.json({ 
-        success: true, 
-        message: 'Propiedad eliminada exitosamente de la base de datos' 
-      });
     } else {
       // Usar memoria (fallback)
       console.log('🧠 Deleting from memory');
