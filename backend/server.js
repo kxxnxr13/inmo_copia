@@ -48,6 +48,12 @@ app.get('/', (req, res) => {
   res.send('API Inmobiliaria Leal funcionando');
 });
 
+// Ruta de prueba para el API
+app.get('/api/test', (req, res) => {
+  console.log('Test route accessed');
+  res.json({ message: 'Backend API is working', timestamp: new Date().toISOString() });
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
