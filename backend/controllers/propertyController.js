@@ -196,43 +196,48 @@ exports.create = async (req, res) => {
 exports.getAll = async (req, res) => {
   try {
     console.log('📋 Getting all properties');
-    
+
     const Property = getPropertyModel();
-    
+
     if (Property) {
-      // Usar base de datos real
-      console.log('💾 Fetching from database');
-      const properties = await Property.findAll({
-        order: [['createdAt', 'DESC']]
-      });
-      
-      const formattedProperties = properties.map(p => formatPropertyFromDB(p.toJSON()));
-      console.log('Total properties from database:', formattedProperties.length);
-      
-      res.json({
-        success: true,
-        properties: formattedProperties,
-        total: formattedProperties.length,
-        source: 'database'
-      });
-    } else {
-      // Usar memoria (fallback)
-      console.log('🧠 Fetching from memory');
-      console.log('Total properties from memory:', propertiesMemory.length);
-      
-      res.json({
-        success: true,
-        properties: propertiesMemory,
-        total: propertiesMemory.length,
-        source: 'memory'
-      });
+      try {
+        // Usar base de datos real
+        console.log('💾 Fetching from database');
+        const properties = await Property.findAll({
+          order: [['createdAt', 'DESC']]
+        });
+
+        const formattedProperties = properties.map(p => formatPropertyFromDB(p.toJSON()));
+        console.log('Total properties from database:', formattedProperties.length);
+
+        return res.json({
+          success: true,
+          properties: formattedProperties,
+          total: formattedProperties.length,
+          source: 'database'
+        });
+      } catch (dbError) {
+        console.error('❌ Database error, falling back to memory:', dbError.message);
+        // Fallar silenciosamente a memoria
+      }
     }
+
+    // Usar memoria (fallback) - tanto si Property es null como si falla la consulta
+    console.log('🧠 Fetching from memory');
+    console.log('Total properties from memory:', propertiesMemory.length);
+
+    res.json({
+      success: true,
+      properties: propertiesMemory,
+      total: propertiesMemory.length,
+      source: 'memory'
+    });
   } catch (error) {
-    console.error('❌ Error getting properties:', error);
-    res.status(500).json({ 
-      success: false, 
+    console.error('❌ Critical error getting properties:', error);
+    res.status(500).json({
+      success: false,
       message: 'Error al obtener las propiedades',
-      error: error.message 
+      error: error.message
     });
   }
 };
