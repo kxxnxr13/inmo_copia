@@ -1,23 +1,47 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// Usuarios de prueba para cuando la base de datos no esté disponible (fallback)
-const testUsers = [
-  {
-    id: 1,
-    name: 'Admin Usuario',
-    email: 'admin@inmobiliaria.com',
-    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
-    role: 'admin'
-  },
-  {
-    id: 2,
-    name: 'Super Admin',
-    email: 'superadmin@inmobiliaria.com',
-    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
-    role: 'super_admin'
+// Importar los usuarios del userController para mantener sincronía
+const getUsersFromUserController = () => {
+  try {
+    const userController = require('./userController');
+    // Acceder a la memoria de usuarios del userController
+    return require('./userController').getUsersMemory?.() || [];
+  } catch (error) {
+    console.log('⚠️ Could not access userController memory, using fallback');
+    return [];
   }
-];
+};
+
+// Usuarios de prueba para cuando la base de datos no esté disponible (fallback)
+let testUsers = null;
+
+// Función para inicializar usuarios de prueba con hashes generados dinámicamente
+const initializeTestUsers = async () => {
+  if (testUsers) return testUsers;
+
+  const hashedPassword = await bcrypt.hash('admin123', 10);
+
+  testUsers = [
+    {
+      id: 1,
+      name: 'Admin Usuario',
+      email: 'admin@inmobiliaria.com',
+      password: hashedPassword, // admin123
+      role: 'admin'
+    },
+    {
+      id: 2,
+      name: 'Super Admin',
+      email: 'superadmin@inmobiliaria.com',
+      password: hashedPassword, // admin123
+      role: 'super_admin'
+    }
+  ];
+
+  console.log('✅ Test users initialized with hashed passwords');
+  return testUsers;
+};
 
 // Función para obtener el modelo User
 const getUserModel = () => {
@@ -55,12 +79,28 @@ exports.loginController = async (req, res) => {
       }
     }
     
-    // Si no se encontró en la base de datos, usar usuarios de prueba
+    // Si no se encontró en la base de datos, usar usuarios de prueba y memoria
     if (!user) {
-      console.log('🧠 Using test users authentication');
+      console.log('🧠 Using memory users authentication');
+
+      // Primero intentar con usuarios de prueba (authController)
+      const testUsers = await initializeTestUsers();
       user = testUsers.find(u => u.email === email);
+
       if (user) {
-        console.log('✅ User found in test users:', user.email);
+        console.log('✅ User found in auth test users:', user.email);
+      } else {
+        // Si no se encuentra, intentar con usuarios del userController
+        try {
+          const { getUsersMemory } = require('./userController');
+          const memoryUsers = getUsersMemory();
+          user = memoryUsers.find(u => u.email === email);
+          if (user) {
+            console.log('✅ User found in userController memory:', user.email);
+          }
+        } catch (error) {
+          console.log('⚠️ Could not access userController memory');
+        }
       }
     }
 

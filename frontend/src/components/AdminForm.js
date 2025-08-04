@@ -13,14 +13,35 @@ const AdminForm = ({ onSuccess, adminToEdit, onCancel }) => {
     e.preventDefault();
     setError('');
     try {
+      let response;
       if (isEdit) {
-        await api.put(`/users/${adminToEdit.id}`, { name, email, password: password || undefined, role: 'admin' });
+        response = await api.put(`/users/${adminToEdit.id}`, {
+          name,
+          email,
+          password: password || undefined,
+          role: 'admin'
+        });
       } else {
-        await api.post('/users/register', { name, email, password, role: 'admin' });
+        response = await api.post('/users/register', {
+          name,
+          email,
+          password,
+          role: 'admin'
+        });
       }
-      onSuccess();
+
+      console.log('User save response:', response.data);
+
+      // Verificar si la respuesta fue exitosa
+      if (response.data.success !== false) {
+        onSuccess();
+      } else {
+        setError(response.data.error || 'Error al guardar el administrador');
+      }
     } catch (err) {
-      setError('Error al guardar el administrador');
+      console.error('Error saving admin:', err);
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || 'Error al guardar el administrador';
+      setError(errorMessage);
     }
   };
 
