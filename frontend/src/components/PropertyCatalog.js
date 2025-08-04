@@ -31,8 +31,8 @@ const PropertyCatalog = () => {
     fetchProperties();
   }, []);
 
-  // Filtrado básico en frontend
-  const filtered = properties.filter(p => {
+  // Filtrado básico en frontend - with safety check
+  const filtered = Array.isArray(properties) ? properties.filter(p => {
     return (
       (!filters.operation || p.operation === filters.operation) &&
       (!filters.type || p.type === filters.type) &&
@@ -40,7 +40,7 @@ const PropertyCatalog = () => {
       (!filters.minPrice || Number(p.price) >= Number(filters.minPrice)) &&
       (!filters.maxPrice || Number(p.price) <= Number(filters.maxPrice))
     );
-  });
+  }) : [];
 
   const handleChange = e => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
