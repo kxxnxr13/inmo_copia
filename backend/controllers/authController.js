@@ -20,7 +20,9 @@ const testUsers = [
 ];
 
 exports.loginController = async (req, res) => {
-  console.log('Login request received:', req.body);
+  console.log('=== LOGIN REQUEST RECEIVED ===');
+  console.log('Body:', req.body);
+  console.log('Headers:', req.headers);
   const { email, password } = req.body;
 
   try {
