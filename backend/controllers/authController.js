@@ -2,19 +2,20 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 // Usuarios de prueba para cuando la base de datos no esté disponible (fallback)
+// Hash para "admin123": $2a$10$N9qo8uLOickgx2ZMRZoMye.Fq.TuE6IZFq6SoXCYdVwNqK./mDCgG
 const testUsers = [
   {
     id: 1,
     name: 'Admin Usuario',
     email: 'admin@inmobiliaria.com',
-    password: '$2a$10$VYKZKj47JL6x.e7Rhr5GX.5NJ4V25CbdHXLfcJw1t2lqNr9E9O8.m', // admin123
+    password: '$2a$10$N9qo8uLOickgx2ZMRZoMye.Fq.TuE6IZFq6SoXCYdVwNqK./mDCgG', // admin123
     role: 'admin'
   },
   {
     id: 2,
     name: 'Super Admin',
     email: 'superadmin@inmobiliaria.com',
-    password: '$2a$10$VYKZKj47JL6x.e7Rhr5GX.5NJ4V25CbdHXLfcJw1t2lqNr9E9O8.m', // admin123
+    password: '$2a$10$N9qo8uLOickgx2ZMRZoMye.Fq.TuE6IZFq6SoXCYdVwNqK./mDCgG', // admin123
     role: 'super_admin'
   }
 ];
