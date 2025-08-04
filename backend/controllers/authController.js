@@ -70,7 +70,8 @@ exports.loginController = async (req, res) => {
     // Si no se encontró en la base de datos, usar usuarios de prueba
     if (!user) {
       console.log('🧠 Using test users authentication');
-      user = testUsers.find(u => u.email === email);
+      const users = await initializeTestUsers();
+      user = users.find(u => u.email === email);
       if (user) {
         console.log('✅ User found in test users:', user.email);
       }
