@@ -26,17 +26,11 @@ exports.loginController = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    let user = null;
+    console.log('Looking for user with email:', email);
 
-    try {
-      // Intenta importar y usar el modelo User
-      const { User } = require('../models');
-      user = await User.findOne({ where: { email } });
-    } catch (dbError) {
-      console.log('Base de datos no disponible, usando usuarios de prueba');
-      // Si la BD no está disponible, usa los usuarios de prueba
-      user = testUsers.find(u => u.email === email);
-    }
+    // Por ahora, usar solo usuarios de prueba para evitar problemas de BD
+    let user = testUsers.find(u => u.email === email);
+    console.log('Found user:', user ? 'YES' : 'NO');
 
     if (!user) {
       return res.status(401).json({ message: 'Credenciales incorrectas' });
