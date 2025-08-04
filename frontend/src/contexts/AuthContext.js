@@ -9,9 +9,28 @@ export const AuthProvider = ({ children }) => {
     const savedUser = localStorage.getItem('user');
     const savedToken = localStorage.getItem('token');
     if (savedUser && savedToken) {
-      // Configura el token en el header de axios
-      api.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
-      return JSON.parse(savedUser);
+      try {
+        // Verificar que el token no sea demasiado viejo o malformado
+        const tokenPayload = JSON.parse(atob(savedToken.split('.')[1]));
+        const currentTime = Math.floor(Date.now() / 1000);
+
+        // Si el token está expirado, limpiar localStorage
+        if (tokenPayload.exp && tokenPayload.exp < currentTime) {
+          console.log('🔒 Token expirado - limpiando localStorage');
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          return null;
+        }
+
+        // Configura el token en el header de axios
+        api.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+        return JSON.parse(savedUser);
+      } catch (error) {
+        console.log('🔒 Token malformado - limpiando localStorage');
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        return null;
+      }
     }
     return null;
   });
