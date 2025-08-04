@@ -333,48 +333,91 @@ exports.update = async (req, res) => {
     const newImageNames = imageFiles.map(file => file.filename);
 
     if (Property) {
-      // Usar base de datos real
-      console.log('💾 Updating in database');
-      const property = await Property.findByPk(id);
-      
-      if (!property) {
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Propiedad no encontrada en la base de datos' 
+      try {
+        // Intentar usar base de datos real
+        console.log('💾 Attempting database update');
+        const property = await Property.findByPk(id);
+
+        if (!property) {
+          console.log('❌ Property not found in database, trying memory');
+          // Fallar a memoria
+          throw new Error('Property not found in database');
+        }
+
+        // Mantener imágenes existentes y agregar nuevas
+        const existingImages = property.images ?
+          (typeof property.images === 'string' ? JSON.parse(property.images) : property.images) : [];
+        const updatedImages = [...existingImages, ...newImageNames];
+
+        const updateData = formatPropertyForDB({
+          title: req.body.title || property.title,
+          description: req.body.description || property.description,
+          price: parseFloat(req.body.price) || property.price,
+          location: req.body.location || property.location,
+          address: req.body.address || property.address,
+          type: req.body.type || property.type,
+          status: req.body.status || property.status,
+          operation: req.body.operation || property.operation,
+          bedrooms: parseInt(req.body.bedrooms) || property.bedrooms,
+          bathrooms: parseInt(req.body.bathrooms) || property.bathrooms,
+          area: parseFloat(req.body.area) || property.area,
+          parking: parseInt(req.body.parking) || property.parking,
+          images: updatedImages,
+          features: req.body.features || property.features
+        });
+
+        await property.update(updateData);
+        const formattedProperty = formatPropertyFromDB(property.toJSON());
+
+        console.log('✅ Property updated in database:', formattedProperty.title);
+        res.json({
+          success: true,
+          message: 'Propiedad actualizada exitosamente en base de datos',
+          property: formattedProperty
+        });
+      } catch (dbError) {
+        console.error('❌ Database error, falling back to memory:', dbError.message);
+        // Usar memoria como fallback
+        console.log('🧠 Updating in memory as fallback');
+        const propertyIndex = propertiesMemory.findIndex(p => p.id === id);
+
+        if (propertyIndex === -1) {
+          return res.status(404).json({
+            success: false,
+            message: 'Propiedad no encontrada'
+          });
+        }
+
+        // Mantener imágenes existentes y agregar nuevas
+        const currentImages = propertiesMemory[propertyIndex].images || [];
+        const updatedImages = [...currentImages, ...newImageNames];
+
+        const updatedProperty = {
+          ...propertiesMemory[propertyIndex],
+          title: req.body.title || propertiesMemory[propertyIndex].title,
+          description: req.body.description || propertiesMemory[propertyIndex].description,
+          price: parseFloat(req.body.price) || propertiesMemory[propertyIndex].price,
+          location: req.body.location || propertiesMemory[propertyIndex].location,
+          address: req.body.address || propertiesMemory[propertyIndex].address,
+          type: req.body.type || propertiesMemory[propertyIndex].type,
+          status: req.body.status || propertiesMemory[propertyIndex].status,
+          operation: req.body.operation || propertiesMemory[propertyIndex].operation,
+          bedrooms: parseInt(req.body.bedrooms) || propertiesMemory[propertyIndex].bedrooms,
+          bathrooms: parseInt(req.body.bathrooms) || propertiesMemory[propertyIndex].bathrooms,
+          area: parseFloat(req.body.area) || propertiesMemory[propertyIndex].area,
+          parking: parseInt(req.body.parking) || propertiesMemory[propertyIndex].parking,
+          images: updatedImages,
+          updatedAt: new Date().toISOString()
+        };
+
+        propertiesMemory[propertyIndex] = updatedProperty;
+        console.log('✅ Property updated in memory:', updatedProperty.title);
+        res.json({
+          success: true,
+          message: 'Propiedad actualizada exitosamente en memoria (BD no disponible)',
+          property: updatedProperty
         });
       }
-
-      // Mantener imágenes existentes y agregar nuevas
-      const existingImages = property.images ? 
-        (typeof property.images === 'string' ? JSON.parse(property.images) : property.images) : [];
-      const updatedImages = [...existingImages, ...newImageNames];
-
-      const updateData = formatPropertyForDB({
-        title: req.body.title || property.title,
-        description: req.body.description || property.description,
-        price: parseFloat(req.body.price) || property.price,
-        location: req.body.location || property.location,
-        address: req.body.address || property.address,
-        type: req.body.type || property.type,
-        status: req.body.status || property.status,
-        operation: req.body.operation || property.operation,
-        bedrooms: parseInt(req.body.bedrooms) || property.bedrooms,
-        bathrooms: parseInt(req.body.bathrooms) || property.bathrooms,
-        area: parseFloat(req.body.area) || property.area,
-        parking: parseInt(req.body.parking) || property.parking,
-        images: updatedImages,
-        features: req.body.features || property.features
-      });
-
-      await property.update(updateData);
-      const formattedProperty = formatPropertyFromDB(property.toJSON());
-      
-      console.log('✅ Property updated in database:', formattedProperty.title);
-      res.json({ 
-        success: true, 
-        message: 'Propiedad actualizada exitosamente en base de datos',
-        property: formattedProperty 
-      });
     } else {
       // Usar memoria (fallback)
       console.log('🧠 Updating in memory');
