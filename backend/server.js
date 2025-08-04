@@ -7,6 +7,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Middleware de logging para debug
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`, req.body);
+  next();
+});
+
 // Servir archivos estáticos (imágenes)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
