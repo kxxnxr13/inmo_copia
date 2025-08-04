@@ -246,57 +246,59 @@ exports.getById = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     console.log('🔍 Looking for property with ID:', id);
-    
+
     const Property = getPropertyModel();
-    
+
     if (Property) {
-      // Usar base de datos real
-      console.log('💾 Searching in database');
-      const property = await Property.findByPk(id);
-      
-      if (!property) {
-        console.log('❌ Property not found in database with ID:', id);
-        return res.status(404).json({ 
-          success: false, 
-          message: `Propiedad con ID ${id} no encontrada en la base de datos` 
-        });
+      try {
+        // Usar base de datos real
+        console.log('💾 Searching in database');
+        const property = await Property.findByPk(id);
+
+        if (!property) {
+          console.log('❌ Property not found in database with ID:', id);
+          // Fallar a memoria en lugar de devolver 404 inmediatamente
+        } else {
+          const formattedProperty = formatPropertyFromDB(property.toJSON());
+          console.log('✅ Property found in database:', formattedProperty.title);
+          return res.json({
+            success: true,
+            property: formattedProperty,
+            source: 'database'
+          });
+        }
+      } catch (dbError) {
+        console.error('❌ Database error, falling back to memory:', dbError.message);
+        // Fallar silenciosamente a memoria
       }
-      
-      const formattedProperty = formatPropertyFromDB(property.toJSON());
-      console.log('✅ Property found in database:', formattedProperty.title);
-      res.json({
-        success: true,
-        property: formattedProperty,
-        source: 'database'
-      });
-    } else {
-      // Usar memoria (fallback)
-      console.log('🧠 Searching in memory');
-      console.log('Available property IDs:', propertiesMemory.map(p => p.id));
-      
-      const property = propertiesMemory.find(p => p.id === id);
-      
-      if (!property) {
-        console.log('❌ Property not found in memory with ID:', id);
-        return res.status(404).json({ 
-          success: false, 
-          message: `Propiedad con ID ${id} no encontrada. IDs disponibles: ${propertiesMemory.map(p => p.id).join(', ')}` 
-        });
-      }
-      
-      console.log('✅ Property found in memory:', property.title);
-      res.json({
-        success: true,
-        property: property,
-        source: 'memory'
+    }
+
+    // Usar memoria (fallback) - tanto si Property es null como si falla la consulta
+    console.log('🧠 Searching in memory');
+    console.log('Available property IDs:', propertiesMemory.map(p => p.id));
+
+    const property = propertiesMemory.find(p => p.id === id);
+
+    if (!property) {
+      console.log('❌ Property not found in memory with ID:', id);
+      return res.status(404).json({
+        success: false,
+        message: `Propiedad con ID ${id} no encontrada. IDs disponibles: ${propertiesMemory.map(p => p.id).join(', ')}`
       });
     }
+
+    console.log('✅ Property found in memory:', property.title);
+    res.json({
+      success: true,
+      property: property,
+      source: 'memory'
+    });
   } catch (error) {
-    console.error('❌ Error getting property:', error);
-    res.status(500).json({ 
-      success: false, 
+    console.error('❌ Critical error getting property:', error);
+    res.status(500).json({
+      success: false,
       message: 'Error al obtener la propiedad',
-      error: error.message 
+      error: error.message
     });
   }
 };
