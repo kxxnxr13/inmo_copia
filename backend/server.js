@@ -28,13 +28,14 @@ sequelize.authenticate()
 // Sincronizar modelos solo si la conexión a la BD es exitosa
 sequelize.authenticate()
   .then(() => {
+    console.log('Conexión a MySQL exitosa - modelos disponibles');
     require('./models'); // Importa y define relaciones
     return sequelize.sync({ alter: true });
   })
   .then(() => console.log('Modelos sincronizados con la base de datos'))
   .catch(err => {
     console.error('Error al sincronizar modelos:', err);
-    console.log('Servidor funcionando sin base de datos');
+    console.log('Servidor funcionando sin base de datos - usando datos de prueba únicamente');
   });
 
 // Rutas
