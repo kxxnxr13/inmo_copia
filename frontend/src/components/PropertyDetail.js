@@ -19,7 +19,15 @@ const PropertyDetail = () => {
         setProperty(propertyData);
       } catch (err) {
         console.error('Error fetching property:', err);
-        setProperty(null);
+
+        if (err.response?.status === 404) {
+          console.log('Property not found (404)');
+          const errorMessage = err.response?.data?.message || `Propiedad con ID ${id} no encontrada`;
+          setProperty({ error: 'not_found', message: errorMessage });
+        } else {
+          console.log('Other error:', err.response?.status);
+          setProperty({ error: 'general', message: 'Error al cargar la propiedad' });
+        }
       }
       setLoading(false);
     };
