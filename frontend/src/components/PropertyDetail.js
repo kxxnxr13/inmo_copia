@@ -34,8 +34,104 @@ const PropertyDetail = () => {
     fetchProperty();
   }, [id]);
 
-  if (loading) return <div style={{ padding: 32 }}>Cargando propiedad...</div>;
-  if (!property) return <div style={{ padding: 32 }}>Propiedad no encontrada.</div>;
+  if (loading) return (
+    <div style={{
+      padding: 40,
+      textAlign: 'center',
+      fontSize: 18,
+      color: '#666'
+    }}>
+      🔄 Cargando propiedad...
+    </div>
+  );
+
+  if (!property) return (
+    <div style={{
+      padding: 40,
+      textAlign: 'center',
+      fontSize: 18,
+      color: '#d9534f'
+    }}>
+      ❌ Propiedad no encontrada
+    </div>
+  );
+
+  if (property.error === 'not_found') return (
+    <div style={{
+      maxWidth: 600,
+      margin: '40px auto',
+      padding: 40,
+      textAlign: 'center',
+      background: '#f8f9fa',
+      borderRadius: 12,
+      border: '1px solid #ddd'
+    }}>
+      <h2 style={{ color: '#d9534f', marginBottom: 20 }}>
+        🔍 Propiedad No Encontrada
+      </h2>
+      <p style={{ fontSize: 16, color: '#666', marginBottom: 20 }}>
+        {property.message}
+      </p>
+      <div style={{
+        background: '#fff3cd',
+        padding: 15,
+        borderRadius: 8,
+        marginBottom: 20,
+        border: '1px solid #ffeaa7'
+      }}>
+        <p style={{ margin: 0, color: '#856404' }}>
+          💡 <strong>Sugerencia:</strong> Verifica el enlace o navega a nuestro catálogo para ver las propiedades disponibles.
+        </p>
+      </div>
+      <a
+        href="/propiedades"
+        style={{
+          background: '#f5a623',
+          color: 'white',
+          padding: '12px 24px',
+          borderRadius: 6,
+          textDecoration: 'none',
+          fontWeight: 'bold',
+          display: 'inline-block'
+        }}
+      >
+        🏠 Ver Todas las Propiedades
+      </a>
+    </div>
+  );
+
+  if (property.error === 'general') return (
+    <div style={{
+      maxWidth: 600,
+      margin: '40px auto',
+      padding: 40,
+      textAlign: 'center',
+      background: '#f8f9fa',
+      borderRadius: 12,
+      border: '1px solid #ddd'
+    }}>
+      <h2 style={{ color: '#d9534f', marginBottom: 20 }}>
+        ⚠️ Error al Cargar
+      </h2>
+      <p style={{ fontSize: 16, color: '#666', marginBottom: 20 }}>
+        {property.message}
+      </p>
+      <button
+        onClick={() => window.location.reload()}
+        style={{
+          background: '#6c757d',
+          color: 'white',
+          border: 'none',
+          padding: '12px 24px',
+          borderRadius: 6,
+          fontWeight: 'bold',
+          cursor: 'pointer'
+        }}
+      >
+        🔄 Intentar de Nuevo
+      </button>
+    </div>
+  );
 
   // Asegurarse de que images siempre sea un array
   const images = Array.isArray(property.images)
