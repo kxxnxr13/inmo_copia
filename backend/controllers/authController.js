@@ -7,14 +7,14 @@ const testUsers = [
     id: 1,
     name: 'Admin Usuario',
     email: 'admin@inmobiliaria.com',
-    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
+    password: '$2a$10$VYKZKj47JL6x.e7Rhr5GX.5NJ4V25CbdHXLfcJw1t2lqNr9E9O8.m', // admin123
     role: 'admin'
   },
   {
     id: 2,
     name: 'Super Admin',
     email: 'superadmin@inmobiliaria.com',
-    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
+    password: '$2a$10$VYKZKj47JL6x.e7Rhr5GX.5NJ4V25CbdHXLfcJw1t2lqNr9E9O8.m', // admin123
     role: 'super_admin'
   }
 ];
