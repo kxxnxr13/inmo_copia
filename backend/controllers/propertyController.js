@@ -154,17 +154,37 @@ exports.create = async (req, res) => {
     };
 
     if (Property) {
-      // Usar base de datos real
-      console.log('💾 Using database storage');
-      const property = await Property.create(formatPropertyForDB(propertyData));
-      const formattedProperty = formatPropertyFromDB(property.toJSON());
-      
-      console.log('✅ Property created in database:', formattedProperty.title);
-      res.status(201).json({ 
-        success: true, 
-        message: 'Propiedad creada exitosamente en base de datos',
-        property: formattedProperty 
-      });
+      try {
+        // Intentar usar base de datos real
+        console.log('💾 Attempting database storage');
+        const property = await Property.create(formatPropertyForDB(propertyData));
+        const formattedProperty = formatPropertyFromDB(property.toJSON());
+
+        console.log('✅ Property created in database:', formattedProperty.title);
+        res.status(201).json({
+          success: true,
+          message: 'Propiedad creada exitosamente en base de datos',
+          property: formattedProperty
+        });
+      } catch (dbError) {
+        console.error('❌ Database error, falling back to memory:', dbError.message);
+        // Usar memoria como fallback
+        console.log('🧠 Using memory storage as fallback');
+        const newProperty = {
+          id: nextId++,
+          ...propertyData,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        propertiesMemory.push(newProperty);
+        console.log('✅ Property created in memory:', newProperty.title);
+        res.status(201).json({
+          success: true,
+          message: 'Propiedad creada exitosamente en memoria (BD no disponible)',
+          property: newProperty
+        });
+      }
     } else {
       // Usar memoria (fallback)
       console.log('🧠 Using memory storage');
@@ -174,13 +194,13 @@ exports.create = async (req, res) => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
-      
+
       propertiesMemory.push(newProperty);
       console.log('✅ Property created in memory:', newProperty.title);
-      res.status(201).json({ 
-        success: true, 
+      res.status(201).json({
+        success: true,
         message: 'Propiedad creada exitosamente en memoria',
-        property: newProperty 
+        property: newProperty
       });
     }
   } catch (error) {
