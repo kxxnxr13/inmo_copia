@@ -14,13 +14,22 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 const sequelize = require('./config/db');
 sequelize.authenticate()
   .then(() => console.log('Conexión a MySQL exitosa'))
-  .catch(err => console.error('Error de conexión a MySQL:', err));
+  .catch(err => {
+    console.error('Error de conexión a MySQL:', err);
+    console.log('Continuando sin base de datos - usando datos de prueba');
+  });
 
-// Sincronizar modelos
-require('./models'); // Importa y define relaciones
-sequelize.sync({ alter: true })
+// Sincronizar modelos solo si la conexión a la BD es exitosa
+sequelize.authenticate()
+  .then(() => {
+    require('./models'); // Importa y define relaciones
+    return sequelize.sync({ alter: true });
+  })
   .then(() => console.log('Modelos sincronizados con la base de datos'))
-  .catch(err => console.error('Error al sincronizar modelos:', err));
+  .catch(err => {
+    console.error('Error al sincronizar modelos:', err);
+    console.log('Servidor funcionando sin base de datos');
+  });
 
 // Rutas
 app.use('/api/users', require('./routes/userRoutes'));
