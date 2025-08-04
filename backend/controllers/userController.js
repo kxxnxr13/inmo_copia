@@ -36,6 +36,11 @@ const getUserModel = () => {
   }
 };
 
+// Función para acceder a la memoria de usuarios (para sincronizar con authController)
+const getUsersMemory = () => {
+  return usersMemory;
+};
+
 exports.register = async (req, res) => {
   console.log('👤 Creating user:', req.body);
   try {
