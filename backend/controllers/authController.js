@@ -79,13 +79,28 @@ exports.loginController = async (req, res) => {
       }
     }
     
-    // Si no se encontró en la base de datos, usar usuarios de prueba
+    // Si no se encontró en la base de datos, usar usuarios de prueba y memoria
     if (!user) {
-      console.log('🧠 Using test users authentication');
-      const users = await initializeTestUsers();
-      user = users.find(u => u.email === email);
+      console.log('🧠 Using memory users authentication');
+
+      // Primero intentar con usuarios de prueba (authController)
+      const testUsers = await initializeTestUsers();
+      user = testUsers.find(u => u.email === email);
+
       if (user) {
-        console.log('✅ User found in test users:', user.email);
+        console.log('✅ User found in auth test users:', user.email);
+      } else {
+        // Si no se encuentra, intentar con usuarios del userController
+        try {
+          const { getUsersMemory } = require('./userController');
+          const memoryUsers = getUsersMemory();
+          user = memoryUsers.find(u => u.email === email);
+          if (user) {
+            console.log('✅ User found in userController memory:', user.email);
+          }
+        } catch (error) {
+          console.log('⚠️ Could not access userController memory');
+        }
       }
     }
 
