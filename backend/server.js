@@ -4,12 +4,26 @@ const path = require('path');
 require('dotenv').config();
 
 const app = express();
-app.use(cors());
-app.use(express.json());
 
-// Middleware de logging para debug
+// CORS configuration
+app.use(cors({
+  origin: ['http://localhost:3000', 'https://b1dc8ff626544c179fc50b5780244ef8-ae7c38b6040c4abcbd2f8ff1b.fly.dev'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Middleware de logging detallado
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path}`, req.body);
+  console.log(`🌐 ${req.method} ${req.url}`);
+  console.log('Headers:', req.headers);
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log('Body:', req.body);
+  }
+  console.log('---');
   next();
 });
 
