@@ -82,7 +82,7 @@ const PropertyDetail = () => {
               {images.map((img, idx) => (
                 <img
                   key={idx}
-                  src={`http://localhost:5000/uploads/${img}`}
+                  src={`http://localhost:8000/uploads/${img}`}
                   alt={`Miniatura ${idx + 1}`}
                   onClick={() => setSelectedImage(idx)}
                   style={{
