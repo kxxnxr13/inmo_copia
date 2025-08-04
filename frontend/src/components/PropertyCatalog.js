@@ -112,11 +112,11 @@ const PropertyCatalog = () => {
               {/* Mostrar la primera imagen de la propiedad */}
               {property.images && property.images.length > 0 ? (
                 <img
-                  src={`http://localhost:5000/uploads/${property.images[0]}`}
+                  src={`http://localhost:8000/uploads/${property.images[0]}`}
                   alt={property.title}
-                  style={{ 
-                    width: '100%', 
-                    height: 200, 
+                  style={{
+                    width: '100%',
+                    height: 200,
                     objectFit: 'cover',
                     borderRadius: '10px 10px 0 0'
                   }}
