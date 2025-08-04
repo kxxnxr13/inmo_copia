@@ -12,8 +12,12 @@ const AdminList = () => {
     setLoading(true);
     try {
       const res = await api.get('/users');
-      setAdmins(res.data.filter(u => u.role === 'admin'));
+      console.log('Users API response:', res.data);
+      // Manejar tanto el formato nuevo como el viejo
+      const users = res.data.users || res.data || [];
+      setAdmins(users.filter(u => u.role === 'admin'));
     } catch (err) {
+      console.error('Error fetching admins:', err);
       setAdmins([]);
     }
     setLoading(false);
