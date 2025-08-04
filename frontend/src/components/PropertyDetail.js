@@ -13,8 +13,12 @@ const PropertyDetail = () => {
     const fetchProperty = async () => {
       try {
         const res = await api.get(`/properties/${id}`);
-        setProperty(res.data);
+        console.log('PropertyDetail response:', res.data);
+        // Handle both new structure { property: {...} } and old structure {...}
+        const propertyData = res.data.property || res.data;
+        setProperty(propertyData);
       } catch (err) {
+        console.error('Error fetching property:', err);
         setProperty(null);
       }
       setLoading(false);
