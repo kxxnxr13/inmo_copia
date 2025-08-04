@@ -53,13 +53,28 @@ if (process.env.DATABASE_URL) {
         ssl: process.env.DB_HOST && process.env.DB_HOST !== 'localhost' ? {
           require: true,
           rejectUnauthorized: false
-        } : false
+        } : false,
+        connectTimeout: 60000,
+        socketTimeout: 60000,
+        // Forzar IPv4
+        family: 4
       },
       pool: {
         max: 5,
         min: 0,
-        acquire: 30000,
+        acquire: 60000,
         idle: 10000
+      },
+      retry: {
+        match: [
+          /ConnectionError/,
+          /ConnectionRefused/,
+          /ConnectionTimedOut/,
+          /TimeoutError/,
+          /ECONNREFUSED/,
+          /ETIMEDOUT/
+        ],
+        max: 3
       }
     }
   );
